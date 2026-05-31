@@ -19,13 +19,14 @@ MPESA_CONSUMER_KEY = "LiveConsumerKeyFromSafaricomDeveloperPortal"
 MPESA_CONSUMER_SECRET = "LiveConsumerSecretFromPortal"
 MPESA_SHORTCODE = "600999"
 MPESA_PASSKEY = "LiveProductionLNMOPassKeyForStkPush"
-MPESA_CALLBACK_URL = "https://pesamatrix.com"
 METAAPI_TOKEN = "placeholder"
 TELEGRAM_BOT_TOKEN = "placeholder"
 TELEGRAM_ADMIN_CHAT_ID = "-1002233445566"
 AI_ENGINE_ENDPOINT = "https://pesamatrix.com"
 ADMIN_SEED_EMAIL = "ops@pesamatrix.com"
 ADMIN_SEED_PASSWORD = "InitialPesaMatrixAdminKey2026!"
+MPESA_ENV = "production"
+MPESA_CALLBACK_URL = "https://pesamatrix.com/api/v1/payments/mpesa-callback"
 
 [workflows]
 runButton = "Project"
@@ -58,3 +59,7 @@ externalPort = 3001
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 5001
+externalPort = 3002

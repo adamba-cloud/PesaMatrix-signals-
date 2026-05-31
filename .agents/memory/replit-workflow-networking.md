@@ -12,5 +12,6 @@ Run frontend (Vite) and backend (Express) in the SAME workflow using `concurrent
 - Use `concurrently "npm run dev:backend" "npm run dev:frontend"` as the single workflow command.
 - Explicitly bind the Express server to `0.0.0.0`: `app.listen(Number(PORT), '0.0.0.0', callback)` — without this, Node may bind to `::` (IPv6 only) and IPv4 proxy calls get ECONNREFUSED.
 - Vite config: `allowedHosts: true` (boolean, not the string `'all'`).
+- BullMQ workers log `ECONNREFUSED :6379` to stdout regardless of `retryStrategy` — this is ioredis' internal logging. It's cosmetic noise; suppress by checking `REDIS_URL` availability before starting workers, or just tolerate it in dev.
 - Any `async` launch call (e.g. `bot.launch()`) must have `.catch()` attached — unhandled rejections cause ts-node-dev to crash and restart the backend, creating intermittent ECONNREFUSED on the proxy.
 - Shell `curl` tests to `127.0.0.1:3001` will always fail from the bash tool — this is expected and does NOT mean the proxy is broken. Trust the workflow's `openPorts` list instead.

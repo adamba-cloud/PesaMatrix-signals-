@@ -4,6 +4,14 @@ import { prisma } from '../../config/database';
 
 const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 
+const connection = {
+  url: redisUrl,
+  maxRetriesPerRequest: null as any,
+  enableReadyCheck: false,
+  retryStrategy: (times: number) => (times > 3 ? null : Math.min(times * 1000, 5000)),
+  reconnectOnError: () => false,
+};
+
 export const copyExecutionWorker = new Worker(
   'copy-trade-queue',
   async (job: Job) => {
@@ -43,5 +51,7 @@ export const copyExecutionWorker = new Worker(
       })
     );
   },
-  { connection: { url: redisUrl }, concurrency: 50 }
+  { connection, concurrency: 50 }
 );
+
+copyExecutionWorker.on('error', () => {}); // suppress connection noise

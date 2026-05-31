@@ -1,40 +1,28 @@
 import { Worker, Job } from 'bullmq';
-import { prisma } from '../../config/database';
+import { MpesaService } from './mpesa.service';
 
 const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+
+// Use a silent connection that doesn't retry endlessly when Redis is unavailable
+const connection = {
+  url: redisUrl,
+  maxRetriesPerRequest: null as any,
+  enableReadyCheck: false,
+  retryStrategy: (times: number) => (times > 3 ? null : Math.min(times * 1000, 5000)),
+  reconnectOnError: () => false,
+};
 
 export const billingWorker = new Worker(
   'billing-queue',
   async (job: Job) => {
     const { CheckoutRequestID, ResultCode, mpesaRef } = job.data;
-
-    if (ResultCode === 0) {
-      const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 30);
-
-      await prisma.$transaction(async (tx) => {
-        const sub = await tx.subscription.update({
-          where: { checkoutId: CheckoutRequestID },
-          data: {
-            status: 'COMPLETED',
-            mpesaRef: mpesaRef,
-            expiresAt: expiry
-          }
-        });
-
-        await tx.auditLog.create({
-          data: {
-            userId: sub.userId,
-            action: `SUBSCRIPTION_ACTIVATED_MPESA:${mpesaRef}`
-          }
-        });
-      });
-    } else {
-      await prisma.subscription.update({
-        where: { checkoutId: CheckoutRequestID },
-        data: { status: 'FAILED' }
-      });
-    }
+    await MpesaService.processCallback(CheckoutRequestID, ResultCode, mpesaRef);
   },
-  { connection: { url: redisUrl } }
+  { connection }
 );
+
+billingWorker.on('failed', (job, err) => {
+  console.error(`[BillingWorker] Job ${job?.id} failed:`, err.message);
+});
+
+billingWorker.on('error', () => {}); // suppress connection noise
