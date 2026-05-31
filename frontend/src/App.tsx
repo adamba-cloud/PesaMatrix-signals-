@@ -22,7 +22,7 @@ export default function App() {
   const [maxSpread, setMaxSpread] = useState('5.0');
   const [statusMessage, setStatusMessage] = useState('');
 
-  const API_URL = 'http://localhost:5000/api/v1';
+  const API_URL = '/api/v1';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,4 +207,147 @@ export default function App() {
                   <p className="text-xs text-gray-400 mt-1">Instantly drops execution pipelines across all MT5 terminals.</p>
                 </div>
                 <button 
-                  onClick={() => handleToggleKillSwitch(!killSwitch)} 
+                  onClick={() => handleToggleKillSwitch(!killSwitch)}
+                  className={`px-4 py-2 rounded font-bold text-sm transition ${killSwitch ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-brand-border hover:bg-gray-600 text-gray-300'}`}
+                >
+                  {killSwitch ? 'ACTIVE — Click to Deactivate' : 'INACTIVE — Click to Activate'}
+                </button>
+              </div>
+
+              <div className="bg-brand-dark p-4 rounded-lg border border-brand-border">
+                <h3 className="font-bold text-sm mb-3">Risk Parameter Configuration</h3>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Max Spread (pips)</label>
+                    <input
+                      type="number"
+                      value={maxSpread}
+                      onChange={e => setMaxSpread(e.target.value)}
+                      className="w-full bg-brand-card border border-brand-border rounded px-3 py-2 text-white focus:outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`${API_URL}/admin/risk-parameters`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                          body: JSON.stringify({ maxSpread: parseFloat(maxSpread) })
+                        });
+                        const data = await res.json();
+                        setStatusMessage(`Risk params updated. Max Spread: ${data.config?.maxSpread}`);
+                      } catch {
+                        setStatusMessage('Risk parameter update failed.');
+                      }
+                    }}
+                    className="w-full bg-brand-accent hover:bg-blue-600 transition text-white font-bold py-2 rounded text-sm"
+                  >
+                    Update Risk Parameters
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* M-Pesa Subscription Panel */}
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl space-y-4">
+          <div className="flex items-center gap-2 text-brand-primary">
+            <CreditCard className="w-5 h-5" />
+            <h2 className="font-bold tracking-wide">M-Pesa Subscription</h2>
+          </div>
+          <form onSubmit={handleStkPush} className="space-y-3">
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Phone Number</label>
+              <input
+                type="text"
+                placeholder="254712345678"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                className="w-full bg-brand-dark border border-brand-border rounded px-3 py-2 text-white focus:outline-none focus:border-brand-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Amount (KES)</label>
+              <input
+                type="number"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                className="w-full bg-brand-dark border border-brand-border rounded px-3 py-2 text-white focus:outline-none focus:border-brand-primary"
+              />
+            </div>
+            <button type="submit" className="w-full bg-brand-primary hover:bg-emerald-600 transition text-brand-dark font-bold py-2 rounded text-sm">
+              Initiate STK Push
+            </button>
+          </form>
+        </div>
+
+        {/* MT5 Terminal Provisioning */}
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl space-y-4">
+          <div className="flex items-center gap-2 text-brand-primary">
+            <Key className="w-5 h-5" />
+            <h2 className="font-bold tracking-wide">MT5 Terminal Provisioning</h2>
+          </div>
+          <form onSubmit={handleProvisionTerminal} className="space-y-3">
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">MT5 Login</label>
+              <input
+                type="text"
+                value={mt5Login}
+                onChange={e => setMt5Login(e.target.value)}
+                className="w-full bg-brand-dark border border-brand-border rounded px-3 py-2 text-white focus:outline-none focus:border-brand-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">MT5 Password</label>
+              <input
+                type="password"
+                value={mt5Password}
+                onChange={e => setMt5Password(e.target.value)}
+                className="w-full bg-brand-dark border border-brand-border rounded px-3 py-2 text-white focus:outline-none focus:border-brand-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Broker Server</label>
+              <input
+                type="text"
+                placeholder="BrokerName-Live"
+                value={mt5Server}
+                onChange={e => setMt5Server(e.target.value)}
+                className="w-full bg-brand-dark border border-brand-border rounded px-3 py-2 text-white focus:outline-none focus:border-brand-primary"
+              />
+            </div>
+            <button type="submit" className="w-full bg-brand-accent hover:bg-blue-600 transition text-white font-bold py-2 rounded text-sm">
+              Provision Cloud Terminal
+            </button>
+          </form>
+        </div>
+
+        {/* System Status */}
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl space-y-4">
+          <div className="flex items-center gap-2 text-brand-primary">
+            <ToggleLeft className="w-5 h-5" />
+            <h2 className="font-bold tracking-wide">System Status</h2>
+          </div>
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between items-center py-2 border-b border-brand-border">
+              <span className="text-gray-400">Execution Engine</span>
+              <span className={`font-mono font-bold px-2 py-0.5 rounded text-xs ${killSwitch ? 'text-red-400 bg-red-900/30' : 'text-brand-primary bg-brand-primary/10'}`}>
+                {killSwitch ? 'HALTED' : 'ONLINE'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-brand-border">
+              <span className="text-gray-400">Session Role</span>
+              <span className="font-mono font-bold text-xs text-brand-accent">{role}</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-gray-400">Platform</span>
+              <span className="font-mono text-xs text-gray-300">PESAMATRIX v1.0</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+

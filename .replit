@@ -1,0 +1,81 @@
+modules = ["nodejs-20", "web"]
+[agent]
+expertMode = true
+stack = "BEST_EFFORT_FALLBACK"
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+PORT = "3001"
+NODE_ENV = "development"
+CORS_ORIGIN = "*"
+JWT_SECRET = "4f69748b64e0a4f5fbcfa5b18f51a711bd7e415d852a3b04c05ff195cf2a33ab"
+ENCRYPTION_KEY = "d7b5b7b9687e1a7cd9ef58bda705e608cbb39e2462615967efee967a2cd8bcf1"
+REDIS_URL = "redis://127.0.0.1:6379"
+MPESA_CONSUMER_KEY = "LiveConsumerKeyFromSafaricomDeveloperPortal"
+MPESA_CONSUMER_SECRET = "LiveConsumerSecretFromPortal"
+MPESA_SHORTCODE = "600999"
+MPESA_PASSKEY = "LiveProductionLNMOPassKeyForStkPush"
+MPESA_CALLBACK_URL = "https://pesamatrix.com"
+METAAPI_TOKEN = "placeholder"
+TELEGRAM_BOT_TOKEN = "placeholder"
+TELEGRAM_ADMIN_CHAT_ID = "-1002233445566"
+AI_ENGINE_ENDPOINT = "https://pesamatrix.com"
+ADMIN_SEED_EMAIL = "ops@pesamatrix.com"
+ADMIN_SEED_PASSWORD = "InitialPesaMatrixAdminKey2026!"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Backend API"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow]]
+name = "Backend API"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 3001
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["node", "dist/server.js"]
+build = ["npm", "run", "build"]

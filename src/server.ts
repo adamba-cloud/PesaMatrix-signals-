@@ -2,18 +2,29 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import app from './app';
-import { bot } from './modules/telegram/bot.service';
-import { billingWorker } from './modules/billing/billing.worker';
-import { copyExecutionWorker } from './modules/copyengine/copy.worker';
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 async function bootstrap() {
-  bot.launch();
-  console.log('🤖 Telegram Realtime Control Bot actively mapping hooks...');
+  // Attempt to start Telegram bot (non-fatal if token is invalid)
+  try {
+    const { bot } = await import('./modules/telegram/bot.service');
+    bot.launch();
+    console.log('🤖 Telegram Realtime Control Bot actively mapping hooks...');
+  } catch (err: any) {
+    console.warn('⚠️  Telegram bot skipped (check TELEGRAM_BOT_TOKEN):', err.message);
+  }
 
-  billingWorker.on('completed', (job) => console.log(`Completed payment processing job ${job.id}`));
-  copyExecutionWorker.on('completed', (job) => console.log(`Completed order execution loop ${job.id}`));
+  // Attempt to start BullMQ workers (non-fatal if Redis is unavailable)
+  try {
+    const { billingWorker } = await import('./modules/billing/billing.worker');
+    const { copyExecutionWorker } = await import('./modules/copyengine/copy.worker');
+    billingWorker.on('completed', (job) => console.log(`Completed payment processing job ${job.id}`));
+    copyExecutionWorker.on('completed', (job) => console.log(`Completed order execution loop ${job.id}`));
+    console.log('⚙️  BullMQ workers online.');
+  } catch (err: any) {
+    console.warn('⚠️  BullMQ workers skipped (check REDIS_URL):', err.message);
+  }
 
   app.listen(PORT, () => {
     console.log(`🚀 PesaMatrix Execution Platform listening on standard port ${PORT}`);

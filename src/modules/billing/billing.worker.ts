@@ -1,13 +1,12 @@
 import { Worker, Job } from 'bullmq';
-import IORedis from 'ioredis';
 import { prisma } from '../../config/database';
 
-const redisConnection = new IORedis(process.env.REDIS_URL || 'redis://127.0.0.1:6379');
+const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 
 export const billingWorker = new Worker(
   'billing-queue',
   async (job: Job) => {
-    const { CheckoutRequestID, ResultCode, CallbackMetadata, mpesaRef } = job.data;
+    const { CheckoutRequestID, ResultCode, mpesaRef } = job.data;
 
     if (ResultCode === 0) {
       const expiry = new Date();
@@ -37,5 +36,5 @@ export const billingWorker = new Worker(
       });
     }
   },
-  { connection: redisConnection }
+  { connection: { url: redisUrl } }
 );

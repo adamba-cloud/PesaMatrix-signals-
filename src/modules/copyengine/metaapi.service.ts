@@ -1,4 +1,4 @@
-import MetaApi, { MetatraderAccount } from 'metaapi.cloud-sdk';
+import MetaApi from 'metaapi.cloud-sdk';
 import { prisma } from '../../config/database';
 import { encrypt } from '../../config/encryption';
 
@@ -11,12 +11,11 @@ export class MetaApiService {
 
     const account = await metaApi.metatraderAccountApi.createAccount({
       name: `PESAMATRIX_${login}`,
-      type: 'cloud',
-      login: parseInt(login),
+      type: 'cloud-g2',
+      login: login,
       password: pass,
       server: server,
       platform: 'mt5',
-      application: 'MetaApi',
       magic: 882026
     });
 

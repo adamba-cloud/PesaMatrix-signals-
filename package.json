@@ -22,7 +22,7 @@
     "express-rate-limit": "^7.1.5",
     "ioredis": "^5.3.2",
     "jsonwebtoken": "^9.0.2",
-    "metaapi.cloud-sdk": "^25.1.0",
+    "metaapi.cloud-sdk": "^29.3.3",
     "telegraf": "^4.15.3",
     "zod": "^3.22.4"
   },

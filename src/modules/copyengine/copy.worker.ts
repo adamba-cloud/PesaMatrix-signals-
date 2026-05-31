@@ -1,14 +1,13 @@
 import { Worker, Job } from 'bullmq';
-import IORedis from 'ioredis';
 import { metaApi } from './metaapi.service';
 import { prisma } from '../../config/database';
 
-const redisConnection = new IORedis(process.env.REDIS_URL || 'redis://127.0.0.1:6379');
+const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 
 export const copyExecutionWorker = new Worker(
   'copy-trade-queue',
   async (job: Job) => {
-    const { action, symbol, side, volume, stopLoss, takeProfit, ticket } = job.data;
+    const { action, symbol, side, volume, stopLoss, takeProfit } = job.data;
 
     const config = await prisma.systemConfig.findUnique({ where: { id: 'PESAMATRIX_CONFIG' } });
     if (config?.killSwitchActive) return;
@@ -25,13 +24,15 @@ export const copyExecutionWorker = new Worker(
     await Promise.allSettled(
       activeExecutingSlaves.map(async (slave) => {
         try {
-          const connection = metaApi.getMetatraderConnection(slave.metaId);
-          if (!connection.synchronized) await connection.connect();
+          const account = await metaApi.metatraderAccountApi.getAccount(slave.metaId);
+          const connection = account.getRPCConnection();
+          await connection.connect();
+          await connection.waitSynchronized();
           
           if (action === 'OPEN') {
-            const result = await connection.createMarketOrder(symbol, side, volume, stopLoss, takeProfit);
+            const result = await (connection as any).createMarketOrder(symbol, side, volume, stopLoss, takeProfit);
             await prisma.tradeLog.create({
-              data: { accountId: slave.id, ticket: result.orderId.toString(), symbol, type: side, lots: volume, price: result.price, sl: stopLoss, tp: takeProfit, status: 'SUCCESS' }
+              data: { accountId: slave.id, ticket: (result as any).orderId?.toString() ?? 'UNKNOWN', symbol, type: side, lots: volume, price: (result as any).price ?? 0, sl: stopLoss, tp: takeProfit, status: 'SUCCESS' }
             });
           }
         } catch (err: any) {
@@ -42,5 +43,5 @@ export const copyExecutionWorker = new Worker(
       })
     );
   },
-  { connection: redisConnection, concurrency: 50 }
+  { connection: { url: redisUrl }, concurrency: 50 }
 );

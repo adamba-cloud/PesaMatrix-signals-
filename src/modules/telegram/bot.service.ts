@@ -1,10 +1,9 @@
 import { Telegraf, Markup } from 'telegraf';
 import { Queue } from 'bullmq';
-import IORedis from 'ioredis';
 import { prisma } from '../../config/database';
 
-const redisConnection = new IORedis(process.env.REDIS_URL || 'redis://127.0.0.1:6379');
-const copyQueue = new Queue('copy-trade-queue', { connection: redisConnection });
+const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+const copyQueue = new Queue('copy-trade-queue', { connection: { url: redisUrl } });
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 
 bot.start((ctx) => ctx.reply('PESAMATRIX Cloud Infrastructure Control Engine Activated.'));
