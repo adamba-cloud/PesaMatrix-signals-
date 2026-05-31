@@ -4,9 +4,11 @@
   "description": "Production-grade MT5 Copy Trading SaaS with AI Market Analysis",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cd frontend && npm run build",
     "start": "node dist/server.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:backend": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently --names \"API,WEB\" --prefix-colors \"green,cyan\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts"
@@ -32,6 +34,7 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.11.24",
+    "concurrently": "^9.2.1",
     "prisma": "^5.10.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

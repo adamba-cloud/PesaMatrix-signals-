@@ -13,15 +13,13 @@ router.post('/login', async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: 'Invalid user credentials' });
     }
-
     const token = jwt.sign(
-      { id: user.id, role: user.role, mustChangePassword: user.mustChangePassword },
+      { id: user.id, email: user.email, role: user.role, mustChangePassword: user.mustChangePassword },
       process.env.JWT_SECRET!,
       { expiresIn: '8h' }
     );
-
     res.json({ token, mustChangePassword: user.mustChangePassword });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Authentication routine failure' });
   }
 });
@@ -35,8 +33,60 @@ router.post('/change-password', authenticateToken, async (req: AuthRequest, res:
       data: { password: hashedPassword, mustChangePassword: false },
     });
     res.json({ status: 'Password changed successfully' });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Password update operation failed' });
+  }
+});
+
+router.get('/subscription-status', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const now = new Date();
+    const activeSub = await prisma.subscription.findFirst({
+      where: {
+        userId: req.user!.id,
+        status: 'COMPLETED',
+        expiresAt: { gt: now },
+      },
+      orderBy: { expiresAt: 'desc' },
+    });
+    res.json({ active: !!activeSub, subscription: activeSub });
+  } catch {
+    res.json({ active: false });
+  }
+});
+
+router.get('/my-subscriptions', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const subscriptions = await prisma.subscription.findMany({
+      where: { userId: req.user!.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ subscriptions });
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch subscriptions' });
+  }
+});
+
+router.post('/register', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password || password.length < 8) {
+    return res.status(400).json({ error: 'Email and password (min 8 chars) required' });
+  }
+  try {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) return res.status(409).json({ error: 'Email already registered' });
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const user = await prisma.user.create({
+      data: { email, password: hashedPassword, role: 'USER' },
+    });
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, mustChangePassword: false },
+      process.env.JWT_SECRET!,
+      { expiresIn: '8h' }
+    );
+    res.status(201).json({ token, mustChangePassword: false });
+  } catch {
+    res.status(500).json({ error: 'Registration failed' });
   }
 });
 

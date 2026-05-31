@@ -9,7 +9,9 @@ async function bootstrap() {
   // Attempt to start Telegram bot (non-fatal if token is invalid)
   try {
     const { bot } = await import('./modules/telegram/bot.service');
-    bot.launch();
+    bot.launch().catch((err: any) => {
+      console.warn('⚠️  Telegram bot stopped (invalid token or network):', err.message);
+    });
     console.log('🤖 Telegram Realtime Control Bot actively mapping hooks...');
   } catch (err: any) {
     console.warn('⚠️  Telegram bot skipped (check TELEGRAM_BOT_TOKEN):', err.message);
@@ -26,7 +28,7 @@ async function bootstrap() {
     console.warn('⚠️  BullMQ workers skipped (check REDIS_URL):', err.message);
   }
 
-  app.listen(PORT, () => {
+  app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`🚀 PesaMatrix Execution Platform listening on standard port ${PORT}`);
   });
 }

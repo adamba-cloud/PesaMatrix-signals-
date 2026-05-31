@@ -50,6 +50,7 @@ model Subscription {
   user        User          @relation(fields: [userId], references: [id])
   planName    String
   amount      Float
+  days        Int           @default(30)
   status      PaymentStatus @default(PENDING)
   checkoutId  String        @unique 
   mpesaRef    String?       @unique
@@ -66,7 +67,7 @@ model Mt5Account {
   accountType  AccountType      @default(SLAVE)
   metaId       String           @unique
   login        String
-  password     String           // AES-256-GCM Encrypted
+  password     String
   server       String
   status       ConnectionStatus @default(DISCONNECTED)
   createdAt    DateTime         @default(now())
@@ -95,6 +96,8 @@ model SystemConfig {
   killSwitchActive   Boolean  @default(false)
   maxSpread          Float    @default(5.0)
   maxVolatilityBonus Float    @default(20.0)
+  subscriptionFee    Float    @default(3000.0)
+  subscriptionDays   Int      @default(30)
   updatedAt          DateTime @updatedAt
 }
 

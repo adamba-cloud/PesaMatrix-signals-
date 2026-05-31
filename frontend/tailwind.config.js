@@ -9,12 +9,20 @@ export default {
       colors: {
         brand: {
           dark: '#0B0F19',
-          card: '#161C2A',
-          border: '#242F41',
-          primary: '#10B981', // Safaricom Live Green Hex
-          accent: '#3B82F6'
+          darker: '#070A12',
+          card: '#111827',
+          card2: '#1a2235',
+          border: '#1f2d42',
+          primary: '#10B981',
+          primaryDark: '#059669',
+          primaryLight: '#34D399',
+          accent: '#3B82F6',
+          muted: '#6B7280',
         }
-      }
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
     },
   },
   plugins: [],

@@ -18,22 +18,19 @@ app.post('/api/v1/payments/mpesa-callback', async (req, res) => {
   if (!Body?.stkCallback) {
     return res.status(400).json({ error: 'Invalid callback payload' });
   }
-
   try {
     const { Queue } = await import('bullmq');
     const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
     const billingQueue = new Queue('billing-queue', { connection: { url: redisUrl } });
-
     await billingQueue.add(`mpesa_${Body.stkCallback.CheckoutRequestID}`, {
       CheckoutRequestID: Body.stkCallback.CheckoutRequestID,
       ResultCode: Body.stkCallback.ResultCode,
-      mpesaRef: Body.stkCallback.CallbackMetadata?.Item?.find((i: any) => i.Name === 'MpesaReceiptNumber')?.Value
+      mpesaRef: Body.stkCallback.CallbackMetadata?.Item?.find((i: any) => i.Name === 'MpesaReceiptNumber')?.Value,
     });
   } catch (err: any) {
-    console.warn('⚠️  Could not enqueue billing callback (Redis unavailable):', err.message);
+    console.warn('Could not enqueue billing callback:', err.message);
   }
-
-  res.status(200).send({ ResultCode: 0, ResultDesc: 'Callback processed successfully' });
+  res.status(200).send({ ResultCode: 0, ResultDesc: 'Callback processed' });
 });
 
 export default app;
