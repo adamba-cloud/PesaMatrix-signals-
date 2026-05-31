@@ -1,0 +1,108 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-id.js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum AccountType {
+  MASTER
+  SLAVE
+}
+
+enum ConnectionStatus {
+  DISCONNECTED
+  CONNECTING
+  CONNECTED
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id                 String         @id @default(uuid())
+  email              String         @unique
+  password           String
+  role               Role           @default(USER)
+  mustChangePassword Boolean        @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  subscriptions      Subscription[]
+  mt5Accounts        Mt5Account[]
+  auditLogs          AuditLog[]
+}
+
+model Subscription {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  planName    String
+  amount      Float
+  status      PaymentStatus @default(PENDING)
+  checkoutId  String        @unique 
+  mpesaRef    String?       @unique
+  phoneNumber String
+  expiresAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Mt5Account {
+  id           String           @id @default(uuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id])
+  accountType  AccountType      @default(SLAVE)
+  metaId       String           @unique
+  login        String
+  password     String           // AES-256-GCM Encrypted
+  server       String
+  status       ConnectionStatus @default(DISCONNECTED)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  trades       TradeLog[]
+}
+
+model TradeLog {
+  id           String     @id @default(uuid())
+  accountId    String
+  account      Mt5Account @relation(fields: [accountId], references: [id])
+  ticket       String
+  symbol       String
+  type         String
+  lots         Float
+  price        Float
+  sl           Float?
+  tp           Float?
+  status       String
+  errorMessage String?
+  createdAt    DateTime   @default(now())
+}
+
+model SystemConfig {
+  id                 String   @id @default("PESAMATRIX_CONFIG")
+  killSwitchActive   Boolean  @default(false)
+  maxSpread          Float    @default(5.0)
+  maxVolatilityBonus Float    @default(20.0)
+  updatedAt          DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
